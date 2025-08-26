@@ -129,10 +129,7 @@ const App: React.FC = () => {
 
   return (
     <div className="app">
-      <header className="app-header">
-        <h1>📱 Barcode Scanner</h1>
-        <p>Scan barcodes and QR codes with your camera</p>
-      </header>
+     
 
       <main className="app-main">
         <div className="scanner-container">
@@ -256,9 +253,7 @@ const App: React.FC = () => {
         </div>
       </main>
 
-      <footer className="app-footer">
-        <p>💡 Keep the barcode within the scanning frame for best results</p>
-      </footer>
+     
     </div>
   );
 };
