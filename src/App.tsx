@@ -17,36 +17,108 @@ const App: React.FC = () => {
   const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
   const [selectedDevice, setSelectedDevice] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
+  const [permissionState, setPermissionState] =
+    useState<PermissionState>("prompt");
+
+  // Check camera permission status
+  const checkCameraPermission = async () => {
+    try {
+      const permission = await navigator.permissions.query({
+        name: "camera" as PermissionName,
+      });
+      setPermissionState(permission.state);
+      return permission.state;
+    } catch (err) {
+      console.log("Permission API not supported");
+      return "prompt";
+    }
+  };
+
+  // Request camera permission explicitly
+  const requestCameraPermission = async () => {
+    try {
+      setIsLoading(true);
+      console.log("📹 Requesting camera permission...");
+
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      console.log("✅ Camera permission granted");
+
+      // Stop the stream immediately, we just needed permission
+      stream.getTracks().forEach((track) => track.stop());
+
+      // Now initialize the scanner
+      await initializeScanner();
+
+      return true;
+    } catch (err) {
+      console.error("❌ Camera permission denied:", err);
+      setError(
+        "Camera permission denied. Please allow camera access and try again.",
+      );
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const initializeScanner = async () => {
+    try {
+      setIsLoading(true);
+      console.log("🔍 Starting scanner initialization...");
+      console.log("🔒 Is secure context?", window.isSecureContext);
+      console.log("🌐 Protocol:", window.location.protocol);
+      console.log("🏠 Hostname:", window.location.hostname);
+
+      codeReader.current = new BrowserMultiFormatReader();
+
+      // Get available video devices
+      console.log("📹 Requesting video devices...");
+      const videoDevices = await codeReader.current.listVideoInputDevices();
+      console.log("📹 Video devices found:", videoDevices.length);
+      console.log("📹 Device details:", videoDevices);
+      setDevices(videoDevices);
+
+      if (videoDevices.length > 0) {
+        // Prefer back camera if available
+        const backCamera = videoDevices.find(
+          (device) =>
+            device.label.toLowerCase().includes("back") ||
+            device.label.toLowerCase().includes("rear"),
+        );
+        const selectedId = backCamera?.deviceId || videoDevices[0].deviceId;
+        console.log("📹 Selected device ID:", selectedId);
+        setSelectedDevice(selectedId);
+      } else {
+        console.log("❌ No video devices found");
+        setError(
+          "No cameras found. Please ensure camera permissions are granted.",
+        );
+      }
+    } catch (err) {
+      console.error("❌ Scanner initialization error:", err);
+      setError(
+        "Failed to access camera. Please ensure camera permissions are granted.",
+      );
+    } finally {
+      setIsLoading(false);
+      console.log("✅ Scanner initialization completed");
+    }
+  };
 
   useEffect(() => {
-    const initializeScanner = async () => {
-      try {
-        setIsLoading(true);
-        codeReader.current = new BrowserMultiFormatReader();
-
-        // Get available video devices
-        const videoDevices = await codeReader.current.listVideoInputDevices();
-        setDevices(videoDevices);
-
-        if (videoDevices.length > 0) {
-          // Prefer back camera if available
-          const backCamera = videoDevices.find(
-            (device) =>
-              device.label.toLowerCase().includes("back") ||
-              device.label.toLowerCase().includes("rear"),
-          );
-          setSelectedDevice(backCamera?.deviceId || videoDevices[0].deviceId);
-        }
-      } catch (err) {
-        setError(
-          "Failed to access camera. Please ensure camera permissions are granted.",
+    // Check permission first, then initialize if granted
+    const init = async () => {
+      const permissionStatus = await checkCameraPermission();
+      if (permissionStatus === "granted") {
+        await initializeScanner();
+      } else {
+        console.log(
+          "📹 Camera permission not granted yet, waiting for user action",
         );
-      } finally {
-        setIsLoading(false);
       }
     };
 
-    initializeScanner();
+    init();
 
     return () => {
       if (codeReader.current) {
@@ -129,8 +201,6 @@ const App: React.FC = () => {
 
   return (
     <div className="app">
-     
-
       <main className="app-main">
         <div className="scanner-container">
           {/* Camera Section */}
@@ -177,7 +247,15 @@ const App: React.FC = () => {
             </div>
 
             <div className="controls">
-              {!isScanning ? (
+              {permissionState !== "granted" ? (
+                <button
+                  className="btn btn-start"
+                  onClick={requestCameraPermission}
+                  disabled={isLoading}
+                >
+                  {isLoading ? "🔄 Requesting..." : "📷 Allow Camera Access"}
+                </button>
+              ) : !isScanning ? (
                 <button
                   className="btn btn-start"
                   onClick={startScanning}
@@ -190,6 +268,20 @@ const App: React.FC = () => {
                   ⏹️ Stop Scanning
                 </button>
               )}
+
+              {/* Debug info */}
+              <div
+                style={{ marginTop: "10px", fontSize: "12px", color: "#666" }}
+              >
+                <div>Permission: {permissionState}</div>
+                <div>Selected Device: {selectedDevice || "None"}</div>
+                <div>Loading: {isLoading ? "Yes" : "No"}</div>
+                <div>Devices Count: {devices.length}</div>
+                <div>
+                  Secure Context: {window.isSecureContext ? "Yes" : "No"}
+                </div>
+                <div>Protocol: {window.location.protocol}</div>
+              </div>
             </div>
 
             {isScanning && (
@@ -252,8 +344,6 @@ const App: React.FC = () => {
           </div>
         </div>
       </main>
-
-     
     </div>
   );
 };
