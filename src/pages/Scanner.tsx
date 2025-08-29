@@ -113,14 +113,19 @@ export function Scanner() {
                     target: scannerContainer as HTMLElement,
                     constraints: {
                         facingMode: 'environment',
-                        width: { min: 1280, ideal: 1920, max: 2560 },
-                        height: { min: 720, ideal: 1080, max: 1440 },
-                        aspectRatio: { min: 1, max: 2 }
-                    }
+                        width: { min: 640, ideal: 1280, max: 1920 },
+                        height: { min: 480, ideal: 720, max: 1080 }
+                    },
+                    area: { // This helps with focusing on the center of the image
+                        top: "25%",
+                        right: "10%",
+                        left: "10%",
+                        bottom: "25%",
+                    },
                 },
                 numOfWorkers: navigator.hardwareConcurrency || 4,
                 locate: true,
-                frequency: 10,
+                frequency: 5, // Reduced frequency for better processing
                 debug: {
                     drawBoundingBox: true,
                     showFrequency: true,
@@ -130,29 +135,23 @@ export function Scanner() {
                 multiple: false,
                 locator: {
                     halfSample: true,
-                    patchSize: "medium",
+                    patchSize: "small", // Changed to small for better detection of printed codes
                     debug: {
-                        showCanvas: false,
-                        showPatches: false,
-                        showFoundPatches: false,
-                        showSkeleton: false,
-                        showLabels: false,
-                        showPatchLabels: false,
-                        showRemainingPatchLabels: false,
-                        boxFromPatches: {
-                            showTransformed: false,
-                            showTransformedBox: false,
-                            showBB: false
-                        }
+                        showCanvas: true,
+                        showPatches: true,
+                        showFoundPatches: true,
+                        showSkeleton: true,
+                        showLabels: true,
+                        showPatchLabels: true,
+                        showRemainingPatchLabels: true,
                     }
                 },
                 decoder: {
                     readers: [
-                        // 'ean_reader',
-                        // 'ean_8_reader',
                         'code_128_reader',
-                        // 'code_39_reader',
-                        // 'upc_reader'
+                        'code_39_reader', // Added Code 39 support
+                        'ean_reader',     // Added EAN support
+                        'ean_8_reader',   // Added EAN-8 support
                     ],
                     debug: {
                         drawBoundingBox: true,
@@ -173,8 +172,8 @@ export function Scanner() {
             }
         );
         let lastResults: string[] = [];
-        const BUFFER_SIZE = 3;
-        const CONFIDENCE_THRESHOLD = 0.10;
+        const BUFFER_SIZE = 2; // Reduced buffer size for faster detection
+        const CONFIDENCE_THRESHOLD = 0.08; // Lowered confidence threshold for printed codes
 
         Quagga.onDetected((res: any) => {
             if (isProcessing.current || showSuccessScreen || showErrorModal) {
@@ -183,13 +182,14 @@ export function Scanner() {
 
             const scannedText = res.codeResult.code;
             const confidence = res.codeResult.confidence;
-            if (
-                !scannedText ||
-                scannedText.trim() === "" ||
-                scannedText.length < 4 ||
-                !/^[A-Za-z0-9-_]+$/.test(scannedText) ||
-                confidence < CONFIDENCE_THRESHOLD
-            ) {
+            
+            console.log('Detected:', {
+                code: scannedText,
+                confidence: confidence,
+                format: res.codeResult.format
+            });
+
+            if (!scannedText || scannedText.trim() === "") {
                 lastResults = [];
                 return;
             }
