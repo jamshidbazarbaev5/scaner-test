@@ -10,8 +10,11 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@zxing/browser": "^0.1.5",
-    "@zxing/library": "^0.21.3",
+    "dynamsoft-barcode-reader": "^10.4.31",
+    "dynamsoft-camera-enhancer": "^4.1.1",
+    "dynamsoft-capture-vision-router": "^2.4.33",
+    "dynamsoft-core": "^3.4.31",
+    "dynamsoft-license": "^3.4.31",
     "react": "^19.1.1",
     "react-dom": "^19.1.1"
   },
