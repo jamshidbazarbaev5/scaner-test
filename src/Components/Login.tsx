@@ -1,50 +1,126 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { LogIn } from "lucide-react";
-import { useAuth } from "../context/AuthContext";
 import { useTranslation } from "react-i18next";
+import { api } from "../api/api";
+import { useAuth } from "../context/AuthContext";
 
-const API_URL = "https://test.easybonus.uz";
+declare global {
+  interface Window {
+    Telegram?: {
+      WebApp?: any;
+    };
+  }
+}
 
 export const Login = () => {
   const navigate = useNavigate();
-  const { setUser } = useAuth();
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
+  const [searchParams] = useSearchParams();
   const [error, setError] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const [_isLoading, setIsLoading] = useState(false);
+  const [hasToken, setHasToken] = useState(!!localStorage.getItem("accessToken"));
   const { t } = useTranslation();
+  const { setUser } = useAuth();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    setIsLoading(true);
-
-    try {
-      const response = await fetch(`${API_URL}/api/token/`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ username, password }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.detail || "Неверный логин или пароль");
+  useEffect(() => {
+    const initializeTelegramUser = async () => {
+      if (window.Telegram?.WebApp) {
+        const webAppData = window.Telegram.WebApp;
+        console.log('Login - Telegram WebApp Data:', webAppData.initDataUnsafe);
+        
+        if (webAppData.initDataUnsafe?.user) {
+          const tgUser = webAppData.initDataUnsafe.user;
+          const existingUserData = localStorage.getItem("userData");
+          const existingUser = existingUserData ? JSON.parse(existingUserData) : null;
+          
+          // Try to get user data from API first if we have a token
+          const accessToken = localStorage.getItem("accessToken");
+          if (accessToken) {
+            try {
+              const response = await api.get('/user/me');
+              const userData = response.data;
+              console.log('Login - Got API user data:', userData);
+              
+              // Merge with Telegram data
+              userData.first_name = userData.first_name || tgUser.first_name || '';
+              userData.last_name = userData.last_name || tgUser.last_name || '';
+              userData.username = userData.username || tgUser.username || '';
+              
+              localStorage.setItem("userData", JSON.stringify(userData));
+              setUser(userData);
+              return;
+            } catch (error) {
+              console.error('Failed to get API user data:', error);
+            }
+          }
+          
+          // Fallback to Telegram data
+          const userData = {
+            id: tgUser.id,
+            username: tgUser.username || '',
+            first_name: tgUser.first_name || '',
+            last_name: tgUser.last_name || '',
+            phone: existingUser?.phone || '',
+            bonus: existingUser?.bonus || '0'
+          };
+          console.log('Login - Using Telegram user data:', userData);
+          setUser(userData);
+          localStorage.setItem("userData", JSON.stringify(userData));
+        }
       }
+    };
+    
+    initializeTelegramUser();
+  }, [setUser]);
 
-      localStorage.setItem("accessToken", data.access);
-      localStorage.setItem("refreshToken", data.refresh);
-      localStorage.setItem("userData", JSON.stringify(data.user));
+  useEffect(() => {
+    const token = searchParams.get("token");
+    if (token) {
+      handleTokenLogin(token);
+    }
+  }, [searchParams]);
 
-      setUser(data.user);
+  useEffect(() => {
+    const handleStorageChange = () => {
+      setHasToken(!!localStorage.getItem("accessToken"));
+    };
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
+  }, []);
+
+  const handleTokenLogin = async (token: string) => {
+    setIsLoading(true);
+    try {
+      // Save the token
+      localStorage.setItem("accessToken", token);
+      setHasToken(true);
+      
+      // Set API authorization header
+      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+
+      // Get user data from API
+      const response = await api.get('/user/me');
+      const userData = response.data;
+      console.log('Login - Got API user data after token:', userData);
+      
+      // Merge with Telegram data if available
+      if (window.Telegram?.WebApp?.initDataUnsafe?.user) {
+        const tgUser = window.Telegram.WebApp.initDataUnsafe.user;
+        userData.first_name = userData.first_name || tgUser.first_name || '';
+        userData.last_name = userData.last_name || tgUser.last_name || '';
+        userData.username = userData.username || tgUser.username || '';
+      }
+      
+      localStorage.setItem("userData", JSON.stringify(userData));
+      setUser(userData);
+      
+      // Navigate after everything is set up
       navigate("/", { replace: true });
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Произошла ошибка при входе"
-      );
+      console.error('Login failed:', err);
+      setError(t("loginError"));
+      setHasToken(false);
+      localStorage.removeItem("accessToken");
     } finally {
       setIsLoading(false);
     }
@@ -70,53 +146,17 @@ export const Login = () => {
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <label
-                htmlFor="username"
-                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
-              >
-                {t("username")}
-              </label>
-              <input
-                id="username"
-                type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                required
-              />
+          <div className="mb-6">
+            <div className="flex items-center justify-center space-x-2 mb-2">
+              <div className={`w-3 h-3 rounded-full ${hasToken ? 'bg-green-500' : 'bg-red-500'}`}></div>
+              <span className="text-sm text-gray-600 dark:text-gray-400">
+                {hasToken ? t("tokenFound") : t("noToken")}
+              </span>
             </div>
+           
+          </div>
 
-            <div>
-              <label
-                htmlFor="password"
-                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
-              >
-                {t("password")}
-              </label>
-              <input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                required
-              />
-            </div>
-
-            <button
-              type="submit"
-              disabled={isLoading}
-              className={`w-full py-3 px-4 rounded-lg text-white font-medium ${
-                isLoading
-                  ? "bg-blue-400 dark:bg-blue-500 cursor-not-allowed"
-                  : "bg-blue-500 dark:bg-blue-600 hover:bg-blue-600 dark:hover:bg-blue-700"
-              }`}
-            >
-              {isLoading ? t("loading") : t("login")}
-            </button>
-          </form>
+         
         </div>
       </div>
     </div>

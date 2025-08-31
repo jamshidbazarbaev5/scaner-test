@@ -2,11 +2,13 @@ import { User, Phone, Award, Coins } from "lucide-react";
 import { useBonusHistory } from "../api/scan";
 import { useTranslation } from "react-i18next";
 
+import { User as UserType } from '../context/AuthContext';
+
 const UserDetails = ({
   user,
   totalPoints,
 }: {
-  user: any;
+  user: UserType | null;
   totalPoints: number | undefined;
 }) => {
   const { t } = useTranslation();
@@ -16,19 +18,40 @@ const UserDetails = ({
     error,
   } = useBonusHistory();
 
+  // Debug log to see what user data we're getting
+  console.log('UserDetails - User Data:', user);
+  
+  // Extract user data from nested structure if needed
+  const userData = user?.user || user;
+
+  // Show loading state while bonus history is loading
+  if (bonusHistoryLoading) {
+    return (
+      <div className="pt-4 space-y-4">
+        <div className="flex items-center space-x-3 border-b border-gray-200 dark:border-gray-700 pb-3 text-gray-600 dark:text-gray-400">
+          <div className="rounded-full p-1">
+            <User className="w-4 h-4" />
+          </div>
+          <div>
+            <h3 className="text-gray-600 dark:text-gray-400">
+              {userData?.first_name || t("no_name")}{" "}
+              {userData?.last_name || t("no_last_name")}
+            </h3>
+          </div>
+        </div>
+        <div className="flex items-center justify-center space-x-2">
+          <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-blue-500"></div>
+          <span className="text-sm text-gray-500">{t("loading")}</span>
+        </div>
+      </div>
+    );
+  }
+
   if (error) {
     return null;
   }
 
-  if (bonusHistoryLoading) {
-    return (
-      <div className="flex items-center space-x-2">
-        <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-blue-500"></div>
-        <span className="text-sm text-gray-500">{t("loading")}</span>
-      </div>
-    );
-  }
-  if (!user) {
+  if (!userData) {
     return (
       <div className="bg-gradient-to-r from-blue-500/10 to-blue-600/10 rounded-lg p-4">
         <div className="flex items-center justify-between">

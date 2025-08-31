@@ -8,15 +8,15 @@ const resources = {
       loading: "Загрузка...",
       error: "Ошибка",
       close: "Закрыть",
-      success: "Выполнено!",
-
-      // Auth
-
+      success: "Выполнено!",      // Auth
       login: "Вход",
       logout: "Выйти",
       username: "Имя пользователя",
       password: "Пароль",
       loginError: "Неверный логин или пароль",
+      tokenFound: "Токен найден",
+      noToken: "Токен отсутствует",
+      clearToken: "Удалить токен",
 
       // Navigation
       scan: "Сканировать",
@@ -100,6 +100,9 @@ const resources = {
       username: "Foydalanuvchi nomi",
       password: "Parol",
       loginError: "Noto'g'ri login yoki parol",
+      tokenFound: "Token mavjud",
+      noToken: "Token mavjud emas",
+      clearToken: "Tokenni o'chirish",
 
       // Navigation
       scan: "Skanerlash",
@@ -183,6 +186,9 @@ const resources = {
       username: "Paydalanıwshı atı",
       password: "Parol",
       loginError: "Nadurıs login yamasa parol",
+      tokenFound: "Token bar",
+      noToken: "Token joq",
+      clearToken: "Tokendı óshiriw",
 
       // Navigation
       scan: "Skanerlew",
