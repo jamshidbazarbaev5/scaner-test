@@ -1,0 +1,28 @@
+.coin {
+    position: absolute;
+    width: 30px;
+    height: 30px;
+    background: #ffd700;
+    border-radius: 50%;
+    border: 2px solid #ffb700;
+    animation: coinFall 1s ease-in forwards;
+    opacity: 0;
+}
+
+@keyframes coinFall {
+    0% {
+        transform: translateY(-100%) rotate(0deg);
+        opacity: 1;
+    }
+    50% {
+        opacity: 1;
+    }
+    100% {
+        transform: translateY(100%) rotate(360deg);
+        opacity: 0;
+    }
+}
+
+.coin-container {
+    z-index: 10;
+}
