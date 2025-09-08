@@ -11,8 +11,8 @@ export const EditProfie = () => {
     const [lastName, setLastName] = useState(user?.last_name || "");
     const [phone, setPhone] = useState(user?.phone || "");
     const [message, setMessage] = useState("");
-    const [newPassword, setNewPassword] = useState("");
-    const [showPassword, setShowPassword] = useState(false);
+    const [newPassword, _setNewPassword] = useState("");
+    const [_showPassword, _setShowPassword] = useState(false);
     const [passwordMessage, setPasswordMessage] = useState("");
 
     const {t} = useTranslation();
@@ -114,37 +114,9 @@ export const EditProfie = () => {
                         placeholder={t("last_name")}
                         value={lastName}
                     />
-                    <input
-                        className="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-600
-                                 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100
-                                 focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                        onChange={(e) => setPhone(e.target.value)}
-                        placeholder={t("phone")}
-                        value={phone}
-                    />
+                   
 
-                    <div className="relative">
-                        <input
-                            type={showPassword ? "text" : "password"}
-                            className="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-600
-                                     bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100
-                                     focus:ring-2 focus:ring-emerald-500 focus:border-transparent
-                                     pr-24"
-                            onChange={(e) => setNewPassword(e.target.value)}
-                            placeholder={t("newPassword")}
-                            value={newPassword}
-                        />
-                        <button
-                            type="button"
-                            onClick={() => setShowPassword(!showPassword)}
-                            className="absolute right-3 top-1/2 transform -translate-y-1/2
-                                     px-2 py-1 text-sm text-gray-500 dark:text-gray-400
-                                     hover:text-gray-700 dark:hover:text-gray-200
-                                     focus:outline-none"
-                        >
-                            {showPassword ? t("hide") : t("show")}
-                        </button>
-                    </div>
+                 
                 </div>
 
                 <button
@@ -156,6 +128,14 @@ export const EditProfie = () => {
                     {t("updateProfile")}
                 </button>
             </form>
+              {/* Footer */}
+            <div className="fixed bottom-0 left-0 right-0 p-4 bg-white dark:bg-gray-800 shadow-lg text-center text-sm text-gray-600 dark:text-gray-400">
+             Разработано в <a href="https://www.softium.uz" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:text-blue-600">Softium.uz</a>
+            </div>
+            {/* Footer */}
+            <div className="fixed bottom-0 left-0 right-0 p-4 bg-white dark:bg-gray-800 shadow-lg text-center text-sm text-gray-600 dark:text-gray-400">
+               Разработано в  <a href="https://www.softium.uz" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:text-blue-600">Softium.uz</a>
+            </div>
         </div>
     );
 };
