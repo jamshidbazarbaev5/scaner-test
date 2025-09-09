@@ -1,7 +1,10 @@
 import axios from "axios";
+// Dynamic base URL based on current hostname
+const hostname = window.location.hostname; // e.g., "customer1.bondify.uz"
+const BASE_URL = `https://${hostname}/api`;
 
 export const api = axios.create({
-    baseURL: 'https://test.easybonus.uz/api'
+    baseURL: BASE_URL
 });
 
 api.interceptors.request.use((config) => {
